@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 class HomeScreen extends StatelessWidget {
   final String studentName;
 
@@ -120,7 +121,7 @@ class HomeScreen extends StatelessWidget {
                     // Add functionality for booking class
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple, // Background color
+                    backgroundColor: Colors.deepPurple,
                     padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -150,11 +151,11 @@ class HomeScreen extends StatelessWidget {
           ),
           BottomNavigationBarItem(
             icon: Opacity(
-              opacity: 0.5,  // 50% opacity
+              opacity: 0.5,
               child: SvgPicture.asset(
-                'rupee.svg',  // Using the rupee icon from assets
+                'assets/icons/rupee.svg', // Ensure this path is correct
                 width: 24,
-                height: 24,  // Optionally, add color
+                height: 24,
               ),
             ),
             label: 'Fees',
