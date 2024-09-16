@@ -152,7 +152,7 @@ class HomeScreen extends StatelessWidget {
             icon: Opacity(
               opacity: 0.5,  // 50% opacity
               child: SvgPicture.asset(
-                'assets/rupee.svg',  // Using the rupee icon from assets
+                'rupee.svg',  // Using the rupee icon from assets
                 width: 24,
                 height: 24,  // Optionally, add color
               ),
