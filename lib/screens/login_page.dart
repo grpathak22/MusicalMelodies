@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/screens/home_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -24,19 +25,25 @@ class _LoginPageState extends State<LoginPage> {
 
   void _handleGoogleBtnClick() {
     // Placeholder for Google sign-in logic (Firebase integration here later)
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Google Sign-In'),
-        content: Text('Google Sign-In logic will be here.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
-          ),
-        ],
-      ),
-    );
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: Text('Google Sign-In'),
+    //     content: Text('Google Sign-In logic will be here.'),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => HomeScreen(studentName: "hagya"),
+    //         child: Text('OK'),
+    //       ),
+    //     ],
+    //   ),
+    // );
+    // Direct navigation to HomeScreen after clicking sign-in
+  Navigator.of(context).pushReplacement(
+    MaterialPageRoute(
+      builder: (context) => HomeScreen(studentName: "hagya"),
+    ),
+  );
   }
 
   @override

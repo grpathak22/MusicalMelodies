@@ -9,20 +9,20 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
   final _formKey = GlobalKey<FormState>();
   String? _name;
   String? _age;
-  String? _placeholder1;
-  String? _placeholder2;
+  String? _phoneNumber;
+  String? _experience; // To store selected experience
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // White background
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
           'Complete Profile',
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        backgroundColor: Colors.pinkAccent,
+        backgroundColor: Color.fromARGB(220, 195, 4, 61),
         elevation: 0,
       ),
       body: Padding(
@@ -35,7 +35,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
               children: [
                 SizedBox(height: 20),
 
-                // Name Field with Cool Styling
+                // Name Field
                 _buildCoolTextField(
                   label: 'Name',
                   icon: Icons.person,
@@ -51,7 +51,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                 ),
                 SizedBox(height: 16),
 
-                // Age Field with Cool Styling
+                // Age Field
                 _buildCoolTextField(
                   label: 'Age',
                   icon: Icons.cake,
@@ -68,27 +68,28 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                 ),
                 SizedBox(height: 16),
 
-                // Placeholder Field 1 with Cool Styling
+                // Phone Number Field
                 _buildCoolTextField(
-                  label: 'Placeholder 1',
-                  icon: Icons.label_outline,
+                  label: 'Phone Number',
+                  icon: Icons.phone,
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.length != 10) {
+                      return 'Please enter a valid 10-digit phone number';
+                    }
+                    return null;
+                  },
                   onSaved: (value) {
-                    _placeholder1 = value;
+                    _phoneNumber = value;
                   },
                 ),
                 SizedBox(height: 16),
 
-                // Placeholder Field 2 with Cool Styling
-                _buildCoolTextField(
-                  label: 'Placeholder 2',
-                  icon: Icons.label_outline,
-                  onSaved: (value) {
-                    _placeholder2 = value;
-                  },
-                ),
+                // Experience Dropdown
+                _buildExperienceDropdown(),
                 SizedBox(height: 30),
 
-                // Submit Button with Stylish Look
+                // Submit Button
                 Center(
                   child: ElevatedButton(
                     onPressed: () {
@@ -105,8 +106,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                     child: Text('Submit'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.pinkAccent,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                       textStyle:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       shape: RoundedRectangleBorder(
@@ -166,6 +166,47 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
         validator: validator,
         onSaved: onSaved,
       ),
+    );
+  }
+
+  // Experience Dropdown
+  Widget _buildExperienceDropdown() {
+    return DropdownButtonFormField<String>(
+      decoration: InputDecoration(
+        labelText: 'Experience',
+        icon: Icon(Icons.work_outline, color: Colors.pinkAccent),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(25),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(25),
+          borderSide: BorderSide(color: Colors.transparent),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(25),
+          borderSide: BorderSide(color: Colors.pinkAccent),
+        ),
+      ),
+      value: _experience,
+      items: ['Less than 1 Year', '1-3 Years', 'More Than 3 Years']
+          .map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList(),
+      onChanged: (String? newValue) {
+        setState(() {
+          _experience = newValue;
+        });
+      },
+      onSaved: (String? value) {
+        _experience = value;
+      },
     );
   }
 }

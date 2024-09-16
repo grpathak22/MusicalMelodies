@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "953433426515",
+    "project_id": "musicalmelodies-db276",
+    "storage_bucket": "musicalmelodies-db276.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:953433426515:android:7fc3b03a448cb8515714a6",
+        "android_client_info": {
+          "package_name": "com.android.application"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxr1gwjfedsXhIfM9EP10h4itFIaFKRqM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:953433426515:android:0759e42f793b4b4c5714a6",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxr1gwjfedsXhIfM9EP10h4itFIaFKRqM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

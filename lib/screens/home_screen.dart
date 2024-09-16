@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class HomeScreen extends StatelessWidget {
   final String studentName;
 
-  HomeScreen({required this.studentName});
+  const HomeScreen({required this.studentName, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -152,8 +151,8 @@ class HomeScreen extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Opacity(
               opacity: 0.5,
-              child: SvgPicture.asset(
-                'assets/icons/rupee.svg', // Ensure this path is correct
+              child: Image.asset(
+                'assets/rupee.png', // Ensure this path is correct
                 width: 24,
                 height: 24,
               ),
