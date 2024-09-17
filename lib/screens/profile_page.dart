@@ -14,6 +14,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String _age = '';
   String _phoneNumber = '';
   String _experience = '';
+  String _profilePhotoUrl = '';
 
   @override
   void initState() {
@@ -25,15 +26,19 @@ class _ProfilePageState extends State<ProfilePage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       final userDoc = FirebaseFirestore.instance.collection('student_details').doc(user.uid);
+      final profDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
       final docSnapshot = await userDoc.get();
+      final profDocSnapshot = await profDoc.get();
 
       if (docSnapshot.exists) {
         final data = docSnapshot.data()!;
+        final profData = profDocSnapshot.data()!;
         setState(() {
           _name = data['name'] ?? '';
           _age = data['age'] ?? '';
           _phoneNumber = data['phone_number'] ?? '';
           _experience = data['experience'] ?? '';
+          _profilePhotoUrl = profData['pfp_link'] ?? ''; // Fetch profile photo URL
         });
       } else {
         // Handle the case when the document does not exist
@@ -42,6 +47,7 @@ class _ProfilePageState extends State<ProfilePage> {
           _age = 'Not available';
           _phoneNumber = 'Not available';
           _experience = 'Not available';
+          _profilePhotoUrl = ''; // Default to empty if no photo link
         });
       }
     }
@@ -70,11 +76,16 @@ class _ProfilePageState extends State<ProfilePage> {
               child: CircleAvatar(
                 radius: 60,
                 backgroundColor: Colors.grey[300],
-                child: Icon(
-                  Icons.person_outline,
-                  size: 60,
-                  color: Colors.grey[700],
-                ), // Placeholder icon for profile
+                backgroundImage: _profilePhotoUrl.isNotEmpty
+                    ? NetworkImage(_profilePhotoUrl)
+                    : null, // Use network image if URL is available
+                child: _profilePhotoUrl.isEmpty
+                    ? Icon(
+                        Icons.person_outline,
+                        size: 60,
+                        color: Colors.grey[700],
+                      ) // Placeholder icon if URL is not available
+                    : null,
               ),
             ),
             SizedBox(height: 30),
