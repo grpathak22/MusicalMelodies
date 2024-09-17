@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/screens/login_page.dart';
 import 'dart:async';
 
@@ -23,12 +25,31 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
 
-    // Navigate to the login page after the splash screen
-    Timer(Duration(seconds: 4), () {
+    // Check user authentication status after the splash screen
+    _checkUser();
+  }
+
+  Future<void> _checkUser() async {
+    // Wait for the animation to finish
+    await Future.delayed(const Duration(seconds: 4));
+
+    // Check if the user is already signed in
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    // Navigate to the appropriate screen
+    if (user != null) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => LoginPage()), // Change to home if already logged in
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(studentName: "hagya"), // Change to actual student name or user info
+        ),
       );
-    });
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => LoginPage(),
+        ),
+      );
+    }
   }
 
   @override
@@ -55,7 +76,15 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
             SizedBox(height: 35),
-            // Title with fade-in animation
+            // Title with fade-in animation (if needed)
+            // Text(
+            //   'Your App Title',
+            //   style: TextStyle(
+            //     color: Colors.white,
+            //     fontSize: 24,
+            //     fontWeight: FontWeight.bold,
+            //   ),
+            // ),
           ],
         ),
       ),

@@ -63,6 +63,9 @@ class DefaultFirebaseOptions {
     messagingSenderId: '953433426515',
     projectId: 'musicalmelodies-db276',
     storageBucket: 'musicalmelodies-db276.appspot.com',
+    androidClientId: '953433426515-dvdndqqhp0llhkv6qjs8ml222ki499ci.apps.googleusercontent.com',
+    iosClientId: '953433426515-94olf0isfia13pv27tvdb6vhq4rahvis.apps.googleusercontent.com',
     iosBundleId: 'com.example.myapp',
   );
+
 }

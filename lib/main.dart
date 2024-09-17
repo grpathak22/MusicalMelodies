@@ -7,13 +7,13 @@ import 'screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 void main() {
-  _initializeFirebase();
   runApp(MusicalMelodiesApp());
 }
 
 class MusicalMelodiesApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    _initializeFirebase();
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Musical Melodies',
