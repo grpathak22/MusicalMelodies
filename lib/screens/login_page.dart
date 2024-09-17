@@ -1,7 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/screens/home_screen.dart';
+import 'package:myapp/screens/profile_form_page.dart'; // Import ProfileFormPage for new users
 import 'dart:io';
 
 class LoginPage extends StatefulWidget {
@@ -26,66 +28,77 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
+  // Handle Google login button click
   void _handleGoogleBtnClick() async {
     final userCredential = await _signInWithGoogle();
     if (userCredential != null) {
-      // Show success Snackbar
-      _showSnackBar('Login Successful!', Colors.green);
+      final user = userCredential.user!;
+      final additionalUserInfo = userCredential.additionalUserInfo!;
 
-      // Navigate to HomeScreen if login is successful
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(studentName: "hagya"),
-        ),
-      );
+      // Check if the user is new
+      if (additionalUserInfo.isNewUser) {
+        // If new, add the user to Firestore and navigate to ProfileFormPage
+        await _addUserToFirestore(user, additionalUserInfo);
+        _showSnackBar('Welcome, ${user.displayName}!', Colors.green);
+
+        // Navigate to ProfileFormPage
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => ProfileFormPage(),
+          ),
+        );
+      } else {
+        // If the user already exists, navigate to HomeScreen
+        _showSnackBar('Welcome back, ${user.displayName}!', Colors.green);
+        await Future.delayed(Duration(seconds: 1));
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(studentName: user.displayName!),
+          ),
+        );
+      }
     }
   }
 
+  // Sign in with Google
   Future<UserCredential?> _signInWithGoogle() async {
     try {
       // Check for internet connectivity
       await InternetAddress.lookup('google.com');
 
-      // Check if user is already signed in
-      final GoogleSignInAccount? googleUser = GoogleSignIn().currentUser;
-      if (googleUser == null) {
-        // Trigger the authentication flow if no user is signed in
-        final GoogleSignInAccount? googleUser = await GoogleSignIn(scopes: ['email']).signIn();
-        if (googleUser == null) {
-          // User canceled sign-in, return null
-          return null;
-        }
+      final GoogleSignInAccount? googleUser = await GoogleSignIn(scopes: ['email']).signIn();
+      if (googleUser == null) return null;
 
-        // Obtain the auth details from the request
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
 
-        // Create a new credential
-        final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-
-        // Sign in with Firebase
-        return await FirebaseAuth.instance.signInWithCredential(credential);
-      } else {
-        // User is already signed in, get credentials from Google
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-        final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-
-        // Sign in with Firebase
-        return await FirebaseAuth.instance.signInWithCredential(credential);
-      }
+      return await FirebaseAuth.instance.signInWithCredential(credential);
     } catch (e) {
-      // Show error Snackbar if something goes wrong
       _showSnackBar('Something went wrong (Check Internet)', Colors.red);
       return null;
     }
   }
 
-  // Function to show a SnackBar with custom message and color
+  // Add the new user to Firestore
+  Future<void> _addUserToFirestore(User user, AdditionalUserInfo additionalUserInfo) async {
+    final docUser = FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    // Check if user exists in Firestore
+    final docSnapshot = await docUser.get();
+    if (!docSnapshot.exists) {
+      // If not, add the user to Firestore
+      await docUser.set({
+        'pfp_link': additionalUserInfo.profile?['picture'] ?? '',
+        'type': 'student', // Set the type as 'student'
+      });
+    }
+  }
+
+  // Show a SnackBar with custom message and color
   void _showSnackBar(String message, Color color) {
     final snackBar = SnackBar(
       content: Text(message),

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'home_screen.dart'; // Make sure to import your HomeScreen
 
 class ProfileFormPage extends StatefulWidget {
   @override
@@ -92,23 +95,65 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                 // Submit Button
                 Center(
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         _formKey.currentState!.save();
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Form submitted successfully!'),
-                          ),
-                        );
+                        // Get current user
+                        User? user = FirebaseAuth.instance.currentUser;
+                        if (user == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('User is not authenticated.'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        // Save data to Firestore
+                        try {
+                          await FirebaseFirestore.instance
+                              .collection('student_details')
+                              .doc(user.uid)
+                              .set({
+                            'name': _name,
+                            'age': _age,
+                            'phone_number': _phoneNumber,
+                            'experience': _experience,
+                          });
+
+                          // Show success Snackbar
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Profile updated successfully!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+
+                          // Navigate to HomeScreen
+                          await Future.delayed(Duration(seconds: 1));
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => HomeScreen(studentName: _name ?? "User"),
+                            ),
+                          );
+                        } catch (e) {
+                          // Show error Snackbar
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to update profile. Please try again.'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
                       }
                     },
                     child: Text('Submit'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.pinkAccent,
                       padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                      textStyle:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),

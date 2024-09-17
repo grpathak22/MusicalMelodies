@@ -40,7 +40,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (user != null) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => HomeScreen(studentName: "hagya"), // Change to actual student name or user info
+          builder: (context) => HomeScreen(studentName: ""), // Change to actual student name or user info
         ),
       );
     } else {

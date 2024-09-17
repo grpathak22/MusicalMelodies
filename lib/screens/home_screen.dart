@@ -1,16 +1,59 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/screens/login_page.dart';
+import 'package:myapp/screens/profile_form_page.dart';
+import 'package:myapp/screens/profile_page.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final String studentName;
-
   const HomeScreen({required this.studentName, Key? key}) : super(key: key);
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String studentName = 'Loading...'; // Default value
 
   @override
-  
+  void initState() {
+    super.initState();
+    _fetchStudentName();
+  }
+
+  Future<void> _fetchStudentName() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final userDoc = FirebaseFirestore.instance.collection('student_details').doc(user.uid);
+        final docSnapshot = await userDoc.get();
+
+        if (docSnapshot.exists) {
+          final data = docSnapshot.data()!;
+          setState(() {
+            studentName = data['name'] ?? 'Name not available';
+          });
+        } else {
+          setState(() {
+            studentName = 'Name not available';
+          });
+        }
+      } catch (e) {
+        setState(() {
+          studentName = 'Error fetching name';
+        });
+        print('Error fetching student name: $e');
+      }
+    } else {
+      setState(() {
+        studentName = 'User not logged in';
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     String currentDate = DateFormat('EEEE, MMMM d, y').format(DateTime.now());
 
@@ -27,12 +70,10 @@ class HomeScreen extends StatelessWidget {
           ),
           IconButton(
             icon: Icon(Icons.person_outline),
-            onPressed: () async {
-              // Handle logout functionality
-              await FirebaseAuth.instance.signOut();
-              await GoogleSignIn().signOut();
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => LoginPage()),
+            onPressed: () {
+              // Navigate to ProfilePage without logging out
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => ProfilePage()),
               );
             },
           ),
