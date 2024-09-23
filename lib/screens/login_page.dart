@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:myapp/screens/admin/admin_home_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/screens/profile_form_page.dart'; // Import ProfileFormPage for new users
 import 'dart:io';
@@ -48,15 +49,31 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
       } else {
-        // If the user already exists, navigate to HomeScreen
-        _showSnackBar('Welcome back, ${user.displayName}!', Colors.green);
-        await Future.delayed(Duration(seconds: 1));
+        // If the user already exists, check user type
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          // Check user type and navigate accordingly
+          if (userDoc['type'] == 'admin') {
+            _showSnackBar('Welcome back, ${user.displayName}!', Colors.green);
+            await Future.delayed(Duration(seconds: 1));
+            // Navigate to AdminHomeScreen
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => AdminPage(),
+              ),
+            );
+          } else {
+            // Navigate to HomeScreen for students
+            _showSnackBar('Welcome back, ${user.displayName}!', Colors.green);
+            await Future.delayed(Duration(seconds: 1));
 
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => HomeScreen(studentName: user.displayName!),
-          ),
-        );
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => HomeScreen(studentName: ""),
+              ),
+            );
+          }
+        }
       }
     }
   }

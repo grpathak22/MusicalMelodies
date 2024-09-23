@@ -5,6 +5,7 @@ import 'screens/home_screen.dart'; // Assuming you have this file
 import 'screens/login_page.dart';
 import 'screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:myapp/screens/admin/admin_home_screen.dart';
 import 'firebase_options.dart';
 void main() {
   runApp(MusicalMelodiesApp());

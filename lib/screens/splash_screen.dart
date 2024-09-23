@@ -1,7 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:myapp/screens/admin/admin_home_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
 import 'package:myapp/screens/login_page.dart';
+import 'package:myapp/screens/admin/admin_home_screen.dart'; // Import your Admin Page
 import 'dart:async';
 
 class SplashScreen extends StatefulWidget {
@@ -36,13 +39,24 @@ class _SplashScreenState extends State<SplashScreen>
     // Check if the user is already signed in
     final User? user = FirebaseAuth.instance.currentUser;
 
-    // Navigate to the appropriate screen
+    // Navigate to the appropriate screen based on user type
     if (user != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(studentName: ""), // Change to actual student name or user info
-        ),
-      );
+      // Assuming you have a way to get the user type, e.g., from Firestore
+      String userType = await _getUserType(user.uid); // Replace with your method to get user type
+
+      if (userType == 'student') {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(studentName: user.displayName ?? ""),
+          ),
+        );
+      } else if (userType == 'admin') {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => AdminPage(),
+          ),
+        );
+      }
     } else {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -50,6 +64,11 @@ class _SplashScreenState extends State<SplashScreen>
         ),
       );
     }
+  }
+
+  Future<String> _getUserType(String uid) async {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    return userDoc['type'] ?? 'student'; // Adjust according to your structure// Replace this with actual logic
   }
 
   @override
