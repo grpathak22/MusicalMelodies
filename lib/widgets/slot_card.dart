@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 class SlotCard extends StatelessWidget {
   final String slot;
 
@@ -7,24 +8,24 @@ class SlotCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 5,
+      elevation: 3,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Container(
-        padding: EdgeInsets.all(16),
-        width: 150, // Set a fixed width for the cards
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        width: 140, // Compact width for minimal look
         decoration: BoxDecoration(
-          color: Color.fromARGB(255, 32, 248, 61),
-          borderRadius: BorderRadius.circular(15),
+          color: Color.fromARGB(255, 73, 255, 143), // Blue shade to match a clean, modern theme
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Center(
           child: Text(
             slot,
             style: TextStyle(
-              fontSize: 18,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: const Color.fromARGB(255, 0, 0, 0),
+              fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
           ),

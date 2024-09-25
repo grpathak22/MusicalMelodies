@@ -95,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _fetchBookedClasses() async {
+Future<void> _fetchBookedClasses() async {
   final user = FirebaseAuth.instance.currentUser;
   if (user != null) {
     // Fetch the document with the user's UID
@@ -105,14 +105,37 @@ class _HomeScreenState extends State<HomeScreen> {
         .get();
 
     if (docSnapshot.exists) {
-      // Extract the slot and mode from the document
+      // Extract the slot, mode, and timestamp from the document
       final data = docSnapshot.data() as Map<String, dynamic>;
-      List<dynamic> slot = data['slot'] ?? 'No Slot';
+      List<dynamic> slots = data['slot'] ?? 'No Slot';
       String mode = data['mode'] ?? 'Unknown Mode';
+      Timestamp timestamp = data['timestamp']; // Firestore Timestamp
 
-      setState(() {
-        bookedClasses = ['$slot ($mode)'];
-      });
+      // Convert Firestore timestamp to DateTime
+      DateTime classDate = timestamp.toDate();
+
+      // Get the current date (ignoring the time part)
+      DateTime currentDate = DateTime.now();
+
+      // Compare only the date components
+      if (classDate.isBefore(DateTime(currentDate.year, currentDate.month, currentDate.day))) {
+        // Class date is before today, so delete the document
+        await FirebaseFirestore.instance
+            .collection('students_class_selections')
+            .doc(user.uid)
+            .delete();
+
+        setState(() {
+          bookedClasses = []; // Clear the booked classes
+        });
+
+        // Show a Snackbar or message if needed
+      } else {
+        // Class is still valid, show it
+        setState(() {
+          bookedClasses = ['$slots ($mode)'];
+        });
+      }
     } else {
       // If no document exists for the user
       setState(() {
@@ -121,6 +144,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 }
+
+
 
 void _showCancelDialog(String classInfo) {
   showDialog(
@@ -173,11 +198,18 @@ Future<void> _cancelClass(String classInfo) async {
 
     return Scaffold(
       appBar: AppBar(
-  title: Text('Musical Melodies'),
-  backgroundColor: Colors.deepPurpleAccent,
+  backgroundColor: Color.fromARGB(255, 255, 255, 255),
+  title: Padding(
+    padding: EdgeInsets.symmetric(horizontal: 0), // Adjust padding as needed
+    child: Container(
+      height: 60, // Adjust height as needed
+      width: 90, // Adjust width as needed
+      child: Image.asset('assets/logo.png',fit:BoxFit.fill),
+    ),
+  ),
   actions: [
     IconButton(
-      icon: Icon(Icons.person_outline, size: 30), // Increased size for enhancement
+      icon: Icon(Icons.person, size: 35), // Increased size for enhancement
       onPressed: () {
         // Navigate to ProfilePage without logging out
         Navigator.of(context).push(
@@ -185,9 +217,9 @@ Future<void> _cancelClass(String classInfo) async {
         );
       },
     ),
-    
   ],
 ),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -309,7 +341,7 @@ class AnimatedContainerBox extends StatelessWidget {
             width: double.infinity,
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.deepPurple[50],
+              color: const Color.fromARGB(255, 255, 255, 255),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -322,12 +354,12 @@ class AnimatedContainerBox extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Icon(Icons.music_note, size: 80, color: Colors.deepPurpleAccent),
-                SizedBox(height: 10),
+                Icon(Icons.music_note, size: 40, color: Colors.deepPurpleAccent),
+                SizedBox(height: 4),
                 Text(
                   'Announcements',
                   style: TextStyle(
-                    fontSize: 25,
+                    fontSize: 22,
                     color: Colors.deepPurple[700],
                   ),
                   textAlign: TextAlign.center,
