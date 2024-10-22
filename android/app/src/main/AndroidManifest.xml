@@ -2,7 +2,7 @@
     <application
         android:label="Musical Melodies"
         android:name="${applicationName}"
-        android:icon="@drawable/bwbw">
+        android:icon="@drawable/ic_launcher">
         <activity
             android:name=".MainActivity"
             android:exported="true"

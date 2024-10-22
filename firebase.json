@@ -1,1 +1,39 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"musicalmelodies-db276","appId":"1:953433426515:android:0759e42f793b4b4c5714a6","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"musicalmelodies-db276","configurations":{"android":"1:953433426515:android:0759e42f793b4b4c5714a6","ios":"1:953433426515:ios:79668967f0533bc65714a6"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "musicalmelodies-db276",
+          "appId": "1:953433426515:android:0759e42f793b4b4c5714a6",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "musicalmelodies-db276",
+          "configurations": {
+            "android": "1:953433426515:android:0759e42f793b4b4c5714a6",
+            "ios": "1:953433426515:ios:79668967f0533bc65714a6",
+            "macos": "1:953433426515:ios:79668967f0533bc65714a6",
+            "web": "1:953433426515:web:ba6c550c24a91bdc5714a6",
+            "windows": "1:953433426515:web:8e8af91c71a7f8775714a6"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

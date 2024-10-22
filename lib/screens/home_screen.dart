@@ -5,26 +5,31 @@ import 'package:intl/intl.dart';
 import 'package:myapp/screens/profile_page.dart';
 import 'package:myapp/widgets/slot_card.dart';
 import 'package:myapp/screens/book_class_screen.dart';
+import 'dart:io';
+import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
   final String studentName;
   const HomeScreen({required this.studentName, Key? key}) : super(key: key);
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  HomeScreenState createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   String studentName = 'Loading...'; // Default value
   List<String> todaySlots = []; // To store today's slots
+  String? imageUrl;
   String announcements = 'No new announcements at the moment.'; // Default announcement
   List<String> bookedClasses = []; // To store booked classes for today
+  Timer? _announcementTimer; // Timer for announcements
 
   @override
   void initState() {
+    _startAnnouncementTimer();
     super.initState();
     _fetchStudentName();
-    _fetchTodaySlots();
+
     _fetchAnnouncements(); // Fetch announcements on init
     _fetchBookedClasses(); // Fetch booked classes by the student
   }
@@ -59,29 +64,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _fetchTodaySlots() async {
-    String dayOfWeek = DateFormat('EEEE').format(DateTime.now());
-    DocumentSnapshot docSnapshot = await FirebaseFirestore.instance
-        .collection('class_timings')
-        .doc(dayOfWeek)
-        .get();
 
-    if (docSnapshot.exists) {
-      final data = docSnapshot;
-      List<String>? updatedSlots = List<String>.from(data['updated_slots'] ?? []);
-      List<String> defaultSlots = List<String>.from(data['default_slots'] ?? []);
-
-      // Use updated_slots if available, otherwise fallback to default_slots
-      setState(() {
-        todaySlots = updatedSlots.isNotEmpty ? updatedSlots : defaultSlots;
-      });
-    } else {
-      setState(() {
-        todaySlots = [];
-      });
-    }
+void _startAnnouncementTimer() {
+    _announcementTimer = Timer.periodic(Duration(seconds: 3), (timer) {
+      _fetchAnnouncements();
+    });
   }
-
   Future<void> _fetchAnnouncements() async {
     DocumentSnapshot docSnapshot = await FirebaseFirestore.instance
         .collection('announcements')
@@ -90,10 +78,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (docSnapshot.exists) {
       setState(() {
-        announcements = docSnapshot['message'] ?? 'No new announcements at the moment.';
+        announcements = docSnapshot['announcement'] ?? 'No new announcements at the moment.';
+        imageUrl = docSnapshot['imageUrl'] ?? null;
+        print(imageUrl);
       });
     }
   }
+   @override
+  void dispose() {
+    _announcementTimer?.cancel(); // Clean up the timer
+    super.dispose();
+  }
+
 
 Future<void> _fetchBookedClasses() async {
   final user = FirebaseAuth.instance.currentUser;
@@ -200,7 +196,7 @@ Future<void> _cancelClass(String classInfo) async {
       appBar: AppBar(
   backgroundColor: Color.fromARGB(255, 255, 255, 255),
   title: Padding(
-    padding: EdgeInsets.symmetric(horizontal: 0), // Adjust padding as needed
+    padding: EdgeInsets.only(left:143 ), // Adjust padding as needed
     child: Container(
       height: 60, // Adjust height as needed
       width: 90, // Adjust width as needed
@@ -213,8 +209,10 @@ Future<void> _cancelClass(String classInfo) async {
       onPressed: () {
         // Navigate to ProfilePage without logging out
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => ProfilePage()),
-        );
+  MaterialPageRoute(
+    builder: (context) => ProfilePage(homeScreenState: this),
+  ),
+);
       },
     ),
   ],
@@ -237,7 +235,7 @@ Future<void> _cancelClass(String classInfo) async {
                 ),
               ),
               SizedBox(height: 40),
-              AnimatedContainerBox(announcements: announcements),
+              AnimatedContainerBox(announcements: announcements,imageUrl: imageUrl,),
               SizedBox(height: 20),
 
               // Book Your Class Button
@@ -247,7 +245,7 @@ Future<void> _cancelClass(String classInfo) async {
       // Navigate to BookClassScreen and wait for the result
       bool? classBooked = await Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => BookClassScreen(availableSlots: todaySlots),
+          builder: (context) => BookClassScreen(),
         ),
       );
 
@@ -327,7 +325,9 @@ class AnimatedText extends StatelessWidget {
 
 class AnimatedContainerBox extends StatelessWidget {
   final String announcements;
-  const AnimatedContainerBox({required this.announcements});
+  final String? imageUrl; // Add imageUrl parameter
+
+  const AnimatedContainerBox({required this.announcements, this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -373,6 +373,21 @@ class AnimatedContainerBox extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
+                SizedBox(height: 10), // Added spacing
+                if (imageUrl != null) ...[
+                  GestureDetector(
+                    onTap: () {
+                      // Navigate to FullScreenImage when the icon is tapped
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => FullScreenImage(imageUrl: imageUrl!),
+                        ),
+                      );
+                    },
+                    child: Icon(Icons.image, size: 40, color: Colors.deepPurpleAccent), // Image icon
+                  ),
+                  SizedBox(height: 10), // Spacing below the icon
+                ],
               ],
             ),
           ),
@@ -381,6 +396,30 @@ class AnimatedContainerBox extends StatelessWidget {
     );
   }
 }
+
+// Full screen image widget
+class FullScreenImage extends StatelessWidget {
+  final String imageUrl;
+
+  const FullScreenImage({required this.imageUrl, Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: GestureDetector(
+          onTap: () => Navigator.of(context).pop(), // Close on tap
+          child: Hero(
+            tag: imageUrl, // Unique tag for Hero transition
+            child: Image.network(imageUrl, fit: BoxFit.cover),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
 
 class SectionHeader extends StatelessWidget {
   final String title;

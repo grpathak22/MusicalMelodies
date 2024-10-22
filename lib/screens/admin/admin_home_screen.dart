@@ -1,189 +1,200 @@
+import 'dart:io';
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Import intl package for formatting dates and times
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:myapp/screens/profile_page.dart';
-
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 void main() => runApp(MaterialApp(home: AdminPage()));
 
 class AdminPage extends StatefulWidget {
   @override
-  _AdminPageState createState() => _AdminPageState();
+  AdminPageState createState() => AdminPageState();
 }
 
-class _AdminPageState extends State<AdminPage> {
+class AdminPageState extends State<AdminPage> {
   String currentUserName = "Admin"; // Default name
   int _selectedIndex = 0;
   List<String> selectedTimeSlots = []; // To store selected time slots
   List<Map<String, dynamic>> studentsDetails = []; // Store student details
+  Timer? _timer; // Timer to refresh the data
 
   @override
   void initState() {
     super.initState();
-    _fetchStudentsAttendingToday();
+    _fetchStudentsAttendingToday(); // Initial fetch
+    _startTimer(); // Start the timer
   }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // Cancel the timer when disposing
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+      _fetchStudentsAttendingToday(); // Refresh the data every 3 seconds
+    });
+  }
+
   Future<void> _fetchStudentsAttendingToday() async {
-  DateTime today = DateTime.now();
-  String startDate = DateFormat('yyyy-MM-dd 00:00:00').format(today);
-  String endDate = DateFormat('yyyy-MM-dd 23:59:59').format(today);
+    DateTime today = DateTime.now();
+    String startDate = DateFormat('yyyy-MM-dd 00:00:00').format(today);
+    String endDate = DateFormat('yyyy-MM-dd 23:59:59').format(today);
 
-  // Fetch bookings for today
-  QuerySnapshot bookingSnapshot = await FirebaseFirestore.instance
-      .collection('students_class_selections')
-      .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.parse(startDate)))
-      .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(DateTime.parse(endDate)))
-      .get();
-
-  List<Map<String, dynamic>> tempStudents = [];
-
-  for (var doc in bookingSnapshot.docs) {
-    String userId = doc.id; // Document ID is the user ID (uid)
-
-    // Fetch user details
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('student_details')
-        .doc(userId)
+    // Fetch bookings for today
+    QuerySnapshot bookingSnapshot = await FirebaseFirestore.instance
+        .collection('students_class_selections')
+        .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.parse(startDate)))
+        .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(DateTime.parse(endDate)))
         .get();
-    DocumentSnapshot linkDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .get();
+
+    List<Map<String, dynamic>> tempStudents = [];
+
+    for (var doc in bookingSnapshot.docs) {
+      String userId = doc.id; // Document ID is the user ID (uid)
+
+      // Fetch user details
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('student_details')
+          .doc(userId)
+          .get();
+      DocumentSnapshot linkDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
         
-    if (userDoc.exists) {
-      // Check if booking timestamp is today
-      DateTime bookingTime = (doc['timestamp'] as Timestamp).toDate();
-      if (bookingTime.isAfter(DateTime(today.year, today.month, today.day)) &&
-          bookingTime.isBefore(DateTime(today.year, today.month, today.day + 1))) {
-        // If the booking is for today, add to the list
-        tempStudents.add({
-          'name': userDoc['name'],
-          'mode': doc['mode'] ?? 'N/A', // Use 'N/A' if mode is not available
-          'time': (doc['slot'] as List).isNotEmpty ? doc['slot'] : ['N/A'],
-          'pfp_link': linkDoc['pfp_link'], // Use 'N/A' if slot is not available
-        });
-      } else {
-        // Truncate the document if the booking is not for today
-        await FirebaseFirestore.instance
-            .collection('students_class_selections')
-            .doc(userId)
-            .update({
-              'mode': [],
-              'slot': [],
-              'timestamp': null,
-            });
+      if (userDoc.exists) {
+        // Check if booking timestamp is today
+        DateTime bookingTime = (doc['timestamp'] as Timestamp).toDate();
+        if (bookingTime.isAfter(DateTime(today.year, today.month, today.day)) &&
+            bookingTime.isBefore(DateTime(today.year, today.month, today.day + 1))) {
+          // If the booking is for today, add to the list
+          tempStudents.add({
+            'name': userDoc['name'],
+            'mode': doc['mode'] ?? 'N/A', // Use 'N/A' if mode is not available
+            'time': (doc['slot'] as List).isNotEmpty ? doc['slot'] : ['N/A'],
+            'pfp_link': linkDoc['pfp_link'], // Use 'N/A' if slot is not available
+          });
+        } else {
+          // Truncate the document if the booking is not for today
+          await FirebaseFirestore.instance
+              .collection('students_class_selections')
+              .doc(userId)
+              .update({
+                'mode': [],
+                'slot': [],
+                'timestamp': null,
+              });
+        }
       }
     }
+
+    setState(() {
+      studentsDetails = tempStudents; // Update the state with the fetched students
+    });
   }
 
-  setState(() {
-    studentsDetails = tempStudents; // Update the state with the fetched students
-  });
-}
-
-Widget _buildStudentList() {
-  print(studentsDetails); // Debugging line to check the content
-  return Container(
-    padding: const EdgeInsets.all(16.0),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.withOpacity(0.2),
-          spreadRadius: 2,
-          blurRadius: 10,
-          offset: Offset(0, 3),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Students Attending Today\'s Class:',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.blueAccent,
+  Widget _buildStudentList() {
+    print(studentsDetails); // Debugging line to check the content
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 2,
+            blurRadius: 10,
+            offset: Offset(0, 3),
           ),
-        ),
-        SizedBox(height: 10),
-        if (studentsDetails.isNotEmpty)
-          ...studentsDetails.map((student) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ListTile(
-                  contentPadding: EdgeInsets.all(16),
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.blueAccent,
-                    backgroundImage: student['pfp_link'] != null && student['pfp_link'].isNotEmpty
-                      ? NetworkImage(student['pfp_link']) 
-                      : null, // Fallback to a placeholder if empty
-                    child: (student['pfp_link'] == null || student['pfp_link'].isEmpty)
-                      ? Icon(Icons.person, color: Colors.white) // Placeholder icon
-                      : null,
-                  ),
-                  title: Text(
-                    student['name'],
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.access_time, size: 16, color: Colors.grey),
-                          SizedBox(width: 4),
-                          Text(
-                            'Mode: ${student['mode']}',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.timer, size: 16, color: Colors.grey),
-                          SizedBox(width: 4),
-                          Text(
-                            'Time: ${student['time'].join(', ')}', // Join times if there are multiple
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }).toList()
-        else
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20.0),
-            child: Text(
-              'No students attending',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-              textAlign: TextAlign.center,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Students Attending Today\'s Class:',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.blueAccent,
             ),
           ),
-      ],
-    ),
-  );
-}
-
-
-
-
-
-
-
+          SizedBox(height: 10),
+          if (studentsDetails.isNotEmpty)
+            ...studentsDetails.map((student) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.all(16),
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blueAccent,
+                      backgroundImage: student['pfp_link'] != null && student['pfp_link'].isNotEmpty
+                        ? NetworkImage(student['pfp_link']) 
+                        : null, // Fallback to a placeholder if empty
+                      child: (student['pfp_link'] == null || student['pfp_link'].isEmpty)
+                        ? Icon(Icons.person, color: Colors.white) // Placeholder icon
+                        : null,
+                    ),
+                    title: Text(
+                      student['name'],
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.access_time, size: 16, color: Colors.grey),
+                            SizedBox(width: 4),
+                            Text(
+                              'Mode: ${student['mode']}',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.timer, size: 16, color: Colors.grey),
+                            SizedBox(width: 4),
+                            Text(
+                              'Time: ${student['time'].join(', ')}', // Join times if there are multiple
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList()
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20.0),
+              child: Text(
+                'No students attending',
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -273,6 +284,9 @@ Future<void> _fetchUserName() async {
       });
     }
   }
+// Announcement form widget
+
+
  @override
 Widget build(BuildContext context) {
   // Get today's date and day
@@ -299,12 +313,13 @@ Widget build(BuildContext context) {
       actions: [
           IconButton(
             icon: Icon(Icons.person),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ProfilePage()), // Ensure ProfilePage is defined
-              );
-            },
+    onPressed: () {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ProfilePage(adminPageState: this),
+      ),
+    );
+  },
           ),
         ],
       ),
@@ -349,6 +364,24 @@ Widget build(BuildContext context) {
               ),
             ),
             SizedBox(height: 20),
+            Center(
+  child: ElevatedButton(
+    onPressed: () {
+      // Navigate to AnnouncementUploadPage
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AnnouncementUploadPage()),
+      );
+    },
+    child: Text('Announcements'),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Color.fromARGB(255, 30, 202, 255),  // You can change the color as needed
+      textStyle: TextStyle(fontSize: 18),
+      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+    ),
+  ),
+),
+SizedBox(height: 20),
 
             // Display selected class times
             if (selectedTimeSlots.isNotEmpty)
@@ -397,7 +430,8 @@ Widget build(BuildContext context) {
             SizedBox(height: 20),
 
             // Display students attending today's class
-            _buildStudentList(), // Call the method to build the student list
+            _buildStudentList(), 
+            // Call the method to build the student list
           ],
         ),
       ),
@@ -428,7 +462,219 @@ Widget build(BuildContext context) {
 }
 
 }
+class AnnouncementUploadPage extends StatefulWidget {
+  @override
+  _AnnouncementUploadPageState createState() => _AnnouncementUploadPageState();
+}
 
+class _AnnouncementUploadPageState extends State<AnnouncementUploadPage> {
+  File? _imageFile;
+  bool _isUploading = false;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final ImagePicker _picker = ImagePicker();
+  final TextEditingController _announcementController = TextEditingController();
+  String? _currentAnnouncement;
+  String? _currentImageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCurrentAnnouncement(); // Fetch current announcement when the page loads
+  }
+
+  // Fetch the current announcement from Firestore
+  Future<void> _fetchCurrentAnnouncement() async {
+    try {
+      DocumentSnapshot snapshot =
+          await _firestore.collection('announcements').doc('latest').get();
+
+      if (snapshot.exists) {
+        setState(() {
+          _currentAnnouncement = snapshot['announcement'];
+          _currentImageUrl = snapshot['imageUrl'];
+        });
+      }
+    } catch (e) {
+      print('Error fetching current announcement: $e');
+    }
+  }
+
+  // Pick Image
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    setState(() {
+      _imageFile = pickedFile != null ? File(pickedFile.path) : null;
+    });
+  }
+
+  // Upload Image
+  Future<String?> _uploadImage(String docId) async {
+    if (_imageFile == null) return null;
+
+    try {
+      setState(() {
+        _isUploading = true;
+      });
+
+      // Define a unique file name
+      String fileName = 'announcements/latest/${DateTime.now()}.jpg';
+      Reference storageRef = _storage.ref().child(fileName);
+
+      // Upload file to Firebase Storage
+      UploadTask uploadTask = storageRef.putFile(_imageFile!);
+      TaskSnapshot snapshot = await uploadTask;
+
+      // Get the download URL
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl; // Return the download URL
+    } catch (e) {
+      print('Error uploading image: $e');
+      return null; // Return null in case of error
+    } finally {
+      setState(() {
+        _isUploading = false;
+      });
+    }
+  }
+
+  // Upload Announcement and Call Image Upload
+  Future<void> _uploadAnnouncement() async {
+    DocumentReference docRef = _firestore.collection('announcements').doc();
+
+    // Upload announcement text or other details
+    await docRef.set({
+      'announcement': _announcementController.text,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    // Upload image if it exists and get the image URL
+    String? imageUrl = await _uploadImage(docRef.id);
+
+    // Update the "latest" document with the new announcement details
+    await _firestore.collection('announcements').doc('latest').set({
+      'announcement': _announcementController.text,
+      'imageUrl': imageUrl,
+      'timestamp': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    // Schedule deletion in 2 days
+    Future.delayed(Duration(days: 2), () async {
+      await _deleteAnnouncement(docRef.id);
+    });
+
+    // Success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Upload Successful'), backgroundColor: Colors.green),
+    );
+
+    // Fetch current announcement again to refresh the display
+    _fetchCurrentAnnouncement();
+  }
+
+  // Delete Announcement (and Image)
+  Future<void> _deleteAnnouncement(String docId) async {
+    try {
+      // Get the announcement doc
+      DocumentSnapshot snapshot = await _firestore.collection('announcements').doc(docId).get();
+      String? imageUrl = snapshot['imageUrl'];
+
+      // Delete from Firestore
+      await _firestore.collection('announcements').doc(docId).delete();
+
+      // Delete image from Storage
+      if (imageUrl != null) {
+        await _storage.refFromURL(imageUrl).delete();
+      }
+
+      // Clear current announcement
+      setState(() {
+        _currentAnnouncement = null;
+        _currentImageUrl = null;
+      });
+    } catch (e) {
+      print('Error deleting announcement: $e');
+    }
+  }
+
+  // Delete current announcement
+  Future<void> _deleteCurrentAnnouncement() async {
+    if (_currentAnnouncement != null) {
+      await _deleteAnnouncement('latest');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Current announcement deleted'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Upload Announcement')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Display current announcement if it exists
+            if (_currentAnnouncement != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Current Announcement:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 8),
+                  Text(_currentAnnouncement!),
+                  if (_currentImageUrl != null) ...[
+                    SizedBox(height: 8),
+                    Image.network(_currentImageUrl!, height: 100, width: 100),
+                  ],
+                  IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red),
+                    onPressed: _deleteCurrentAnnouncement,
+                    tooltip: 'Delete Current Announcement',
+                  ),
+                  SizedBox(height: 16),
+                ],
+              ),
+            // Announcement Text Input
+            TextField(
+              controller: _announcementController,
+              decoration: InputDecoration(
+                labelText: 'Announcement Text',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _pickImage,
+              child: Text('Pick Image', style: TextStyle(color: Colors.black)), // Button text color changed to black
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+            SizedBox(height: 16),
+            _imageFile != null
+                ? Image.file(_imageFile!, height: 100, width: 100)
+                : Text('No image selected', style: TextStyle(color: Colors.red)),
+            SizedBox(height: 16),
+            _isUploading
+                ? Center(child: CircularProgressIndicator())
+                : ElevatedButton(
+                    onPressed: _uploadAnnouncement,
+                    child: Text('Upload Announcement', style: TextStyle(color: Colors.black)), // Button text color changed to black
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 // Separate screen for selecting time slots
 class TimeSlotSelectionScreen extends StatefulWidget {
   @override
@@ -486,6 +732,7 @@ class _TimeSlotSelectionScreenState extends State<TimeSlotSelectionScreen> {
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

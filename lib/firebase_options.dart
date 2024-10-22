@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -28,15 +25,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -66,6 +57,37 @@ class DefaultFirebaseOptions {
     androidClientId: '953433426515-dvdndqqhp0llhkv6qjs8ml222ki499ci.apps.googleusercontent.com',
     iosClientId: '953433426515-94olf0isfia13pv27tvdb6vhq4rahvis.apps.googleusercontent.com',
     iosBundleId: 'com.example.myapp',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyC3NGnrke84ZjFLWsslQSoMwrTDIe5q5KU',
+    appId: '1:953433426515:web:ba6c550c24a91bdc5714a6',
+    messagingSenderId: '953433426515',
+    projectId: 'musicalmelodies-db276',
+    authDomain: 'musicalmelodies-db276.firebaseapp.com',
+    storageBucket: 'musicalmelodies-db276.appspot.com',
+    measurementId: 'G-HTBFBD60Y4',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyBo8mFgF6cqaO2CpUVtR4kURKXPdY2FPfo',
+    appId: '1:953433426515:ios:79668967f0533bc65714a6',
+    messagingSenderId: '953433426515',
+    projectId: 'musicalmelodies-db276',
+    storageBucket: 'musicalmelodies-db276.appspot.com',
+    androidClientId: '953433426515-dvdndqqhp0llhkv6qjs8ml222ki499ci.apps.googleusercontent.com',
+    iosClientId: '953433426515-94olf0isfia13pv27tvdb6vhq4rahvis.apps.googleusercontent.com',
+    iosBundleId: 'com.example.myapp',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyC3NGnrke84ZjFLWsslQSoMwrTDIe5q5KU',
+    appId: '1:953433426515:web:8e8af91c71a7f8775714a6',
+    messagingSenderId: '953433426515',
+    projectId: 'musicalmelodies-db276',
+    authDomain: 'musicalmelodies-db276.firebaseapp.com',
+    storageBucket: 'musicalmelodies-db276.appspot.com',
+    measurementId: 'G-9PDWQDGKLY',
   );
 
 }

@@ -1,10 +1,17 @@
+import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart'; // For kIsWeb
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/screens/login_page.dart';
-
 class ProfilePage extends StatefulWidget {
+final dynamic homeScreenState; // Accepts HomeScreen state
+  final dynamic adminPageState;  // Accepts AdminPageState
+
+  const ProfilePage({this.homeScreenState, this.adminPageState, Key? key}) : super(key: key);
+
   @override
   _ProfilePageState createState() => _ProfilePageState();
 }
@@ -76,16 +83,15 @@ class _ProfilePageState extends State<ProfilePage> {
               child: CircleAvatar(
                 radius: 60,
                 backgroundColor: Colors.grey[300],
-                backgroundImage: _profilePhotoUrl.isNotEmpty
-                    ? NetworkImage(_profilePhotoUrl)
-                    : null, // Use network image if URL is available
-                child: _profilePhotoUrl.isEmpty
-                    ? Icon(
+                child: _profilePhotoUrl.isNotEmpty
+                    ? ClipOval(
+                        child: _buildProfileImage(),
+                      )
+                    : Icon(
                         Icons.person_outline,
                         size: 60,
                         color: Colors.grey[700],
-                      ) // Placeholder icon if URL is not available
-                    : null,
+                      ),
               ),
             ),
             SizedBox(height: 30),
@@ -116,10 +122,20 @@ class _ProfilePageState extends State<ProfilePage> {
             Center(
               child: ElevatedButton(
                 onPressed: () async {
-                  // Logout logic
+                   if (widget.adminPageState != null) {
+                
+                widget.adminPageState.dispose(); // Clean up resources
+              } else if (widget.homeScreenState != null) {
+                widget.homeScreenState.dispose(); // Clean up resources
+              }
+                  if (kIsWeb) {
+                  // Sign out logic for web
+                   await FirebaseAuth.instance.signOut();
+                } else {
+                  // Sign out logic for mobile
                   await FirebaseAuth.instance.signOut();
                   await GoogleSignIn().signOut();
-
+                }
                   // Show success Snackbar
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -151,6 +167,40 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
     );
+  }
+
+  // Method to build the profile image widget based on the platform
+  Widget _buildProfileImage() {
+    if (kIsWeb) {
+      // For web, use CachedNetworkImage with CORS fallback handling
+      return CachedNetworkImage(
+        imageUrl: _profilePhotoUrl,
+        width: 120,
+        height: 120,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => CircularProgressIndicator(),
+        errorWidget: (context, url, error) => Icon(
+          Icons.person_outline,
+          size: 60,
+          color: Colors.grey[700],
+        ),
+      );
+    } else {
+      // For mobile, use standard Image.network
+      return Image.network(
+        _profilePhotoUrl,
+        width: 120,
+        height: 120,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Icon(
+            Icons.person_outline,
+            size: 60,
+            color: Colors.grey[700],
+          );
+        },
+      );
+    }
   }
 
   // Helper method to build each profile row with label and value

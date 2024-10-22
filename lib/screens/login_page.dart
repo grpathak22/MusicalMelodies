@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:myapp/screens/admin/admin_home_screen.dart';
 import 'package:myapp/screens/home_screen.dart';
-import 'package:myapp/screens/profile_form_page.dart'; // Import ProfileFormPage for new users
+import 'package:myapp/screens/profile_form_page.dart'; 
+import 'package:flutter/foundation.dart';// Import ProfileFormPage for new users
 import 'dart:io';
 
 class LoginPage extends StatefulWidget {
@@ -81,8 +82,13 @@ class _LoginPageState extends State<LoginPage> {
   // Sign in with Google
   Future<UserCredential?> _signInWithGoogle() async {
     try {
-      // Check for internet connectivity
-      await InternetAddress.lookup('google.com');
+      if (kIsWeb) {
+      GoogleAuthProvider googleProvider = GoogleAuthProvider();
+
+      // Sign in with a pop-up window
+      return await FirebaseAuth.instance.signInWithPopup(googleProvider);
+    }
+    else{
 
       final GoogleSignInAccount? googleUser = await GoogleSignIn(scopes: ['email']).signIn();
       if (googleUser == null) return null;
@@ -94,11 +100,12 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       return await FirebaseAuth.instance.signInWithCredential(credential);
+    }
     } catch (e) {
       _showSnackBar('Something went wrong (Check Internet)', Colors.red);
       return null;
     }
-  }
+    }
 
   // Add the new user to Firestore
   Future<void> _addUserToFirestore(User user, AdditionalUserInfo additionalUserInfo) async {
